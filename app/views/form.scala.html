@@ -1,0 +1,42 @@
+@()
+<div class="card" style="margin-top:1em">
+  <div class="card-header">
+    <div class="alert alert-info" role="alert">
+      Paste or Load Image File
+    </div>
+  </div>
+  <div class="card-body">
+    <div class="form-row whiteforeground">
+      <div class="col-12 col-md-9 mb-2 mb-md-0">
+        <input type="file" name="file" onchange="previewImage()"
+               class="form-control form-control-lg"
+               placeholder="Load image...">
+      </div>
+      <div class="col-12 col-md-3">
+        <button type="button"
+                id="submit-btn"
+                class="btn btn-block btn-lg btn-primary"
+                style="border-radius: 2rem;">
+          Submit
+        </button>
+      </div>
+    </div>
+  </div>
+  <div class="card-footer">
+    <div id="submission-status"></div>
+  </div>
+</div>
+<div class="card" style="margin-top:1em">
+  <div class="card-header">
+    <div class="alert alert-info" role="alert">
+      Image Preview
+    </div>
+  </div>
+  <div class="card-body">
+    <img id="preview"
+         src='@routes.Assets.versioned("images/jm-2010-01177s_0016.gif")'
+         width="400" alt="Image preview...">
+  </div>
+  <div class="card-footer">
+  </div>
+</div>

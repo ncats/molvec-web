@@ -1,0 +1,96 @@
+@()
+
+@main("MOLVEC Demonstration"){
+  <div class="row">
+    <div class="col-md-6">
+      @form()
+    </div>
+    <div class="col-md-6">
+      @results()
+    </div>
+  </div>
+}
+
+  <script>
+  const form = new FormData ();
+
+  $(document).ready(function(){
+    $('#submit-btn').on('click', function() {
+      if (!form.has('image-data') && !form.has('image-src')) {
+        const src = $('#preview').attr('src');
+        // skip leading '/' from src
+        const url = new URL (window.location.href+src.substring(1));
+        form.set('image-src', url.href);
+      }
+      console.log('submit form: image-src='+form.get('image-src')
+                 +' image-data='+form.get('image-data'));
+      $.ajax({
+        url: '@controllers.routes.MolVecApp.submit("all")',
+        type: 'POST',
+        data: form,
+        processData: false,
+        contentType: false,
+        success: function(data) {
+          console.log('SERVER>> '+JSON.stringify(data));
+          $('#submission-status').addClass('alert alert-success')
+                                 .html('<b>'+data.sha1+'</b>');
+        },
+        error: function (jqXHR, textStatus, errorMessage) {
+          console.log("***** can't submit form: "+errorMessage);
+          $('#submission-status').addClass('alert alert-warning')
+                                 .html('<b>'+errorMessage+'</b>');    
+        }
+      });
+    });
+  });
+  
+  function previewImage () {
+    var preview = $('#preview'); //selects the query named img
+    var file = $('input[type=file]')[0].files[0]; //sames as here
+    var reader  = new FileReader();
+    
+    reader.onloadend = function () {
+      preview.attr('src', reader.result);
+      form.set('image-data', reader.result);
+    }
+    
+    if (file) {
+      reader.readAsDataURL(file); //reads the data as a URL
+    }
+    else {
+      var src = '@routes.Assets.versioned("images/jm-2010-01177s_0016.gif")';
+      preview.attr('src', src);
+      form.set('image-src', src);
+    }
+    $('#submission-status').removeClass().html('');
+  }
+  
+  document.onpaste = function (event) {
+    // use event.originalEvent.clipboard for newer chrome versions
+    var items = (event.clipboardData
+              || event.originalEvent.clipboardData).items;
+    console.log(JSON.stringify(items)); // will give you the mime types
+    // find pasted image among pasted items
+    var blob = null;
+    for (var i = 0; i < items.length; i++) {
+      if (items[i].type.indexOf("image") === 0) {
+        blob = items[i].getAsFile();
+      }
+    }
+    
+    // load image if there is a pasted image
+    if (blob !== null) {
+      $('#submission-status').removeClass().html('');
+      var reader = new FileReader();
+      reader.onload = function(event) {
+        //console.log(event.target.result); // data url!
+        $('#preview').attr('src', reader.result);
+        form.set('image-data', reader.result);
+      };
+      console.log('image: '+blob);
+      reader.readAsDataURL(blob);
+    }
+  }
+  //previewImage();  //calls the function named previewFile()
+  </script>
+    

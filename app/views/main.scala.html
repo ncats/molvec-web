@@ -1,0 +1,55 @@
+@(title: String)(content: Html)
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta http-equiv="x-ua-compatible" content="ie=edge">
+    <title>@title</title>
+    <link rel="stylesheet" href='@routes.Assets.versioned("stylesheets/landing-page.css")'>
+    <link rel="stylesheet" href='@routes.Assets.versioned("stylesheets/loader-default.css")'/>    
+    <link rel="stylesheet" href="https://unpkg.com/bootstrap-material-design@@4.1.1/dist/css/bootstrap-material-design.min.css" integrity="sha384-wXznGJNEXNG1NFsbm0ugrLFMQPWswR3lds2VeinahP8N0zJw9VWSopbjv2x7WCvX" crossorigin="anonymous">
+  </head>
+  <body>
+
+    <!-- Navigation -->
+    <nav class="navbar navbar-light bg-light static-top">
+      <div class="container">
+        <a class="navbar-brand" href="https://ncats.nih.gov">
+          <img src='@routes.Assets.versioned("images/ncats-logo.png")' height="65%" width="65%">
+        </a>
+        <a class="btn btn-primary"
+           href="https://spotlite.nih.gov/ncats/molvec"
+           style="border-radius:3rem">CODE</a>
+      </div>
+    </nav>
+
+    <div class="container-fluid" style="margin-bottom:1em"> 
+      <div id="content-panel" class="loader loader-default"></div>     
+      @content
+    </div>
+
+  </body>
+  <head>
+    <script type='text/javascript' src='@routes.Assets.versioned("lib/jquery/jquery.min.js")'></script>
+    <script src="https://unpkg.com/popper.js@@1.12.6/dist/umd/popper.js" integrity="sha384-fA23ZRQ3G/J53mElWqVJEGJzU0sTs+SvzG8fXVWP+kJQ1lwFAOkcUOysnlKJC33U" crossorigin="anonymous"></script>    
+    <script src="https://unpkg.com/bootstrap-material-design@@4.1.1/dist/js/bootstrap-material-design.js" integrity="sha384-CauSuKpEqAFajSpkdjv3z9t8E7RlpJ1UP0lKM/+NdtSarroVKu069AlsRPKkFBz9" crossorigin="anonymous"></script>
+  </head>
+</html>
+
+<script>
+function showloader () {
+  $('#content-panel').each(function (index) {
+    $(this).addClass('is-active');
+  });
+}
+
+function hideloader () {
+  $('#content-panel').removeClass('is-active');
+}
+
+$(document).ready(function() {
+  $('body').bootstrapMaterialDesign();
+  window.addEventListener('pageshow', hideloader);
+});
+</script>
