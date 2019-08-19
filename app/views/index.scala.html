@@ -16,6 +16,7 @@
 
   $(document).ready(function(){
     $('#submit-btn').on('click', function() {
+      showloader();
       if (!form.has('image-data') && !form.has('image-src')) {
         const src = $('#preview').attr('src');
         const url = new URL (window.location.origin+src);
@@ -37,10 +38,23 @@
             .html('<b>Successfully processed image <a href="'
                  +route.url+'">'+data.image+'</a></b>');
           for(var k in data) {
-            $('#result-footer-'+k)
-              .html('<em>Result generated in '+data[k].elapsed+'s</em>');
-            $('#result-body-'+k)
-              .html('<pre>'+data[k].molfile+'</pre>');
+            if (k != 'image') {
+              $('#result-footer-'+k)
+                .html('<em>Result generated in '+data[k].elapsed+'s</em>');
+              /*
+                 $('#result-body-'+k)
+                 .html('<pre>'+data[k].molfile+'</pre>');
+               */
+              var id = 'result-body-'+k;
+              console.log('updating element '+id);
+              var viewer = new Kekule.ChemWidget.Viewer(document.getElementById(id));
+              viewer.setEnableToolbar(true)
+                    .setEnableDirectInteraction(true)
+                    .setEnableEdit(true)
+                    .setDimension('500px','300px');
+              var mol = Kekule.IO.loadFormatData(data[k].molfile, 'mol');
+              viewer.setChemObj(mol);
+            }
           }
         },
         error: function (jqXHR, textStatus, errorMessage) {
@@ -48,6 +62,8 @@
           $('#submission-status').addClass('alert alert-warning')
                                  .html('<b>'+errorMessage+'</b>');    
         }
+      }).always(function () {
+        hideloader();
       });
     });
 
@@ -55,7 +71,7 @@
       const url = '@controllers.routes.MolVecApp.data(id,"image")';
       $('#preview').attr('src', url);
       form.delete('image-src');
-      form.delete('image-data');
+        form.delete('image-data');
     }
   });
   
@@ -106,6 +122,17 @@
       reader.readAsDataURL(blob);
     }
   }
+
+  function showloader () {
+    $('#content-panel').each(function (index) {
+      $(this).addClass('is-active');
+    });
+  }
+
+  function hideloader () {
+    $('#content-panel').removeClass('is-active');
+  }
+  
   //previewImage();  //calls the function named previewFile()
   </script>
     
