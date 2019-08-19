@@ -13,18 +13,34 @@
   <body>
 
     <!-- Navigation -->
-    <nav class="navbar navbar-light bg-light static-top">
-      <div class="container">
-        <a class="navbar-brand" href="https://ncats.nih.gov">
-          <img src='@routes.Assets.versioned("images/ncats-logo.png")' height="65%" width="65%">
-        </a>
-        <a class="btn btn-primary"
-           href="https://spotlite.nih.gov/ncats/molvec"
-           style="border-radius:3rem">CODE</a>
+    <nav class="navbar fixed-top navbar-expand-lg navbar-light bg-light">
+      <a class="navbar-brand" href="https://ncats.nih.gov">
+        <img src='@controllers.routes.Assets.versioned("images/ncats-logo.png")'
+             height="65%" width="65%">
+      </a>
+      <button class="navbar-toggler" type="button" data-toggle="collapse"
+              data-target="#navbarTogglerMenu"
+              aria-controls="navbarTogglerMenu"
+              aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="navbarTogglerMenu">
+        <ul class="navbar-nav mr-auto mt-2 mt-lg-0">
+          <li class="nav-item">
+            <a class="nav-link"
+               href="@controllers.routes.MolVecApp.index">Clear</a>
+          </li>
+
+          <li class="nav-item">
+            <a class="btn btn-primary"
+               href="https://spotlite.nih.gov/ncats/molvec-web"
+               style="border-radius:3rem">CODE</a>
+          </li>
+        </ul>
       </div>
     </nav>
-
-    <div class="container-fluid" style="margin-bottom:1em"> 
+    
+    <div class="container-fluid" style="margin-bottom:1em;margin-top:4em;"> 
       <div id="content-panel" class="loader loader-default"></div>     
       @content
     </div>
@@ -34,6 +50,7 @@
     <script type='text/javascript' src='@routes.Assets.versioned("lib/jquery/jquery.min.js")'></script>
     <script src="https://unpkg.com/popper.js@@1.12.6/dist/umd/popper.js" integrity="sha384-fA23ZRQ3G/J53mElWqVJEGJzU0sTs+SvzG8fXVWP+kJQ1lwFAOkcUOysnlKJC33U" crossorigin="anonymous"></script>    
     <script src="https://unpkg.com/bootstrap-material-design@@4.1.1/dist/js/bootstrap-material-design.js" integrity="sha384-CauSuKpEqAFajSpkdjv3z9t8E7RlpJ1UP0lKM/+NdtSarroVKu069AlsRPKkFBz9" crossorigin="anonymous"></script>
+    <script src="@controllers.routes.MolVecApp.jsRoutes" type="text/javascript"></script>    
   </head>
 </html>
 

@@ -1,4 +1,4 @@
-@()
+@(id: String = null)
 
 @main("MOLVEC Demonstration"){
   <div class="row">
@@ -18,8 +18,7 @@
     $('#submit-btn').on('click', function() {
       if (!form.has('image-data') && !form.has('image-src')) {
         const src = $('#preview').attr('src');
-        // skip leading '/' from src
-        const url = new URL (window.location.href+src.substring(1));
+        const url = new URL (window.location.origin+src);
         form.set('image-src', url.href);
       }
       console.log('submit form: image-src='+form.get('image-src')
@@ -32,8 +31,17 @@
         contentType: false,
         success: function(data) {
           console.log('SERVER>> '+JSON.stringify(data));
-          $('#submission-status').addClass('alert alert-success')
-                                 .html('<b>'+data.sha1+'</b>');
+          var route = jsRoutes.controllers.MolVecApp.results(data.image);
+          $('#submission-status')
+            .addClass('alert alert-success')
+            .html('<b>Successfully processed image <a href="'
+                 +route.url+'">'+data.image+'</a></b>');
+          for(var k in data) {
+            $('#result-footer-'+k)
+              .html('<em>Result generated in '+data[k].elapsed+'s</em>');
+            $('#result-body-'+k)
+              .html('<pre>'+data[k].molfile+'</pre>');
+          }
         },
         error: function (jqXHR, textStatus, errorMessage) {
           console.log("***** can't submit form: "+errorMessage);
@@ -42,6 +50,13 @@
         }
       });
     });
+
+    @if(id != null){
+      const url = '@controllers.routes.MolVecApp.data(id,"image")';
+      $('#preview').attr('src', url);
+      form.delete('image-src');
+      form.delete('image-data');
+    }
   });
   
   function previewImage () {
