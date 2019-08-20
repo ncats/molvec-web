@@ -1,4 +1,22 @@
-@()
+@(api: String)
+<div class="card" style="margin-top:1em">
+  <div class="card-header">
+    <div class="alert alert-info" role="alert">
+      <a href="#" data-toggle="collapse" data-target="#batch-api">Batch API</a>
+    </div>
+  </div>
+  <div class="collapse" id="batch-api">
+    <div class="card-body">
+      <div class="col-12 col-md-12">
+        <pre>
+curl --data-binary @@{image} -H Content-Type:image/png @api/{engine}
+        </pre>
+        where <code>{image}</code> is the input image file and
+        <code>{engine}</code> is one of the supported values: <code>molvec</code>, <code>osra</code>, <code>imago</code>, or <code>all</code>. Note that the value for <code>Content-Type</code> can be any supported image formats; it doesn't have to match the actual mime-type of the specified image.
+      </div>
+    </div>
+  </div>
+</div>
 <div class="card" style="margin-top:1em">
   <div class="card-header">
     <div class="alert alert-info" role="alert">

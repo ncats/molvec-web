@@ -76,12 +76,11 @@ public class MolVecApp extends Controller {
         void run (Image image) {
             Logger.debug(self()+": "+image.sha1);
             RecognitionResult result = new RecognitionResult (image);
+            result.engine = self().path().name();
             try {
                 File file = app.getImageFile(image);
                 if (file != null) {
-                    long start = System.currentTimeMillis();
                     recognize (result, file);
-                    result.elapsed = 1e-3*(System.currentTimeMillis()-start);
                 }
                 else {
                     result.status = "Image "+image.sha1+" not found!";
@@ -107,18 +106,105 @@ public class MolVecApp extends Controller {
         }
         
         void recognize (RecognitionResult result, File file) throws Exception {
-            result.engine = self().path().name();
+            long start = System.currentTimeMillis();            
             result.molfile = Molvec.ocr(file);
+            result.elapsed = 1e-3*(System.currentTimeMillis()-start);
             result.status = "SUCCESS";
             Logger.debug(self()+": "+file+" => "+result.molfile);
         }
     }
-        
+
+    static abstract class ExecActor extends RecognizeActor {
+        final File exec;
+        final String ext;
+
+        ExecActor (MolVecApp app, File exec, String ext) {
+            super (app);
+            this.exec = exec;
+            this.ext = ext;
+        }
+
+        void recognize (RecognitionResult result, File file) throws Exception {
+            String name = file.getName();
+            int pos = name.indexOf('.');
+            if (pos > 0) {
+                name = name.substring(0, pos);
+            }
+            
+            File outfile = new File (app.work.toFile(), name+"."+ext);
+            long start = System.currentTimeMillis();            
+            if (outfile.exists() && outfile.length() > 0l) {
+                result.molfile = new String (java.nio.file.Files.readAllBytes
+                                             (outfile.toPath()));
+                result.status = "CACHED";
+            }
+            else {
+                ProcessBuilder pb = createProcessBuilder (file, outfile);
+                Logger.debug(self()+": >>> executing "+pb.command());
+                
+                Process proc = pb.start();
+                proc.waitFor(60l, TimeUnit.SECONDS);
+                if (proc.exitValue() == 0) {
+                    if (outfile.exists()) {
+                        result.molfile = new String
+                            (java.nio.file.Files.readAllBytes
+                             (outfile.toPath()));
+                    }
+                    result.status = "SUCCESS";
+                }
+                else {
+                    result.status = exec.getName()
+                        +" exits with status "+proc.exitValue();
+                }
+                Logger.debug(self()+": >>> exit value "+proc.exitValue());
+            }
+            result.elapsed = 1e-3*(System.currentTimeMillis()-start);
+        }
+
+        abstract ProcessBuilder createProcessBuilder
+            (File infile, File outfile);
+    }
+
+    static class ImagoActor extends ExecActor {
+        static Props props (MolVecApp app, File exec) {
+            return Props.create(ImagoActor.class,
+                                () -> new ImagoActor (app, exec));
+        }
+
+        ImagoActor (MolVecApp app, File exec) {
+            super (app, exec, "imago");
+        }
+
+        ProcessBuilder createProcessBuilder (File file, File outfile) {
+            return new ProcessBuilder (exec.getPath(), file.getPath(),
+                                       "-o", outfile.getPath());
+        }
+    }
+    
+    static class OsraActor extends ExecActor {
+        static Props props (MolVecApp app, File exec) {
+            return Props.create(OsraActor.class,
+                                () -> new OsraActor (app, exec));
+        }
+
+        OsraActor (MolVecApp app, File exec) {
+            super (app, exec, "osra");
+        }
+
+        ProcessBuilder createProcessBuilder (File file, File outfile) {
+            return new ProcessBuilder (exec.getPath(),
+                                       "-f", "sdf", "-w", outfile.getPath(),
+                                       file.getPath());
+        }
+    }
+
+    
     final HttpExecutionContext ec;    
     public final AsyncCacheApi cache;
     public final Config config;
     public final Environment env;
     public final WSClient wsclient;
+    public final String api;
     
     final TemporaryFileCreator fileCreator;
     final MessageDigest md;
@@ -126,6 +212,7 @@ public class MolVecApp extends Controller {
     final Duration timeout;
     final ActorSystem actorSystem;
     final List<ActorRef> recognizers = new ArrayList<>();
+    
     
     @Inject
     public MolVecApp (Config config, Environment env, AsyncCacheApi cache,
@@ -138,29 +225,16 @@ public class MolVecApp extends Controller {
         this.ec = ec;
         this.actorSystem = actorSystem;
 
+        api = config.getString("api.endpoint");
         timeout = Duration.ofSeconds(60);
-        Config conf = config.getConfig("imago");
-        if (conf != null) {
-            String exec = conf.getString("exec");
-            File file = env.getFile(exec);
-            Logger.debug("IMAGO: "+file+" "+file.exists());
-        }
-        
-        conf = config.getConfig("osra");
-        if (conf != null) {
-            String exec = conf.getString("exec");
-            File file = env.getFile(exec);
-            Logger.debug("OSRA: "+file+" "+file.exists());
-        }
-
-        recognizers.add(actorSystem.actorOf(MolVecActor.props(this), "molvec"));
 
         String file = config.getString("work");
         if (file == null)
             file = "work";
-        File f = new File (env.rootPath(), file);
-        f.mkdirs();
-        work = f.toPath();
+        { File f = new File (env.rootPath(), file);
+            f.mkdirs();
+            work = f.toPath();
+        }
 
         fileCreator = Files.singletonTemporaryFileCreator();
         try {
@@ -169,8 +243,38 @@ public class MolVecApp extends Controller {
         catch (Exception ex) {
             throw new RuntimeException ("SHA1 not available");
         }
+        
+        Config conf = config.getConfig("imago");
+        if (conf != null) {
+            String exec = conf.getString("exec");
+            File f = env.getFile(exec);
+            if (f.exists()) {
+                recognizers.add(actorSystem.actorOf
+                                (ImagoActor.props(this, f), "imago"));
+                Logger.debug("IMAGO registered "+file);
+            }
+            else {
+                Logger.warn("IMAGO not registered: "+f);
+            }
+        }
+        
+        conf = config.getConfig("osra");
+        if (conf != null) {
+            String exec = conf.getString("exec");
+            File f = env.getFile(exec);
+            if (f.exists()) {
+                recognizers.add(actorSystem.actorOf
+                                (OsraActor.props(this, f), "osra"));
+                Logger.debug("OSRA registered "+file);
+            }
+            else {
+                Logger.warn("OSRA not registered: "+f);
+            }
+        }
 
-        Logger.debug("MolVecApp initialized!");
+        recognizers.add(actorSystem.actorOf(MolVecActor.props(this), "molvec"));
+
+        Logger.debug("MolVecApp initialized: "+recognizers);
     }
 
     Image createImage (String mime, File file) {
@@ -276,15 +380,15 @@ public class MolVecApp extends Controller {
     }
 
     public Result index() {
-        return ok(views.html.index.render(null));
+        return ok(views.html.index.render(this, null));
     }
 
     public Result results (String id) {
         Image image = getImage (id);
         if (image != Image.EMPTY) {
-            return ok(views.html.index.render(id));
+            return ok(views.html.index.render(this, id));
         }
-        return ok(views.html.index.render(null));
+        return ok(views.html.index.render(this, null));
     }
     
     public Result data (String id, String format) {
@@ -361,11 +465,11 @@ public class MolVecApp extends Controller {
                         throw new RuntimeException (ex);
                     }
                 }).collect(Collectors.toList());
-        /*        
+
         for (RecognitionResult r : results) {
             Logger.debug(">> "+Json.toJson(r));
         }
-        */
+
         return results.toArray(new RecognitionResult[0]);
     }
 

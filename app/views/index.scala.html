@@ -1,9 +1,10 @@
-@(id: String = null)
+@import controllers.MolVecApp
+@(app: MolVecApp, id: String = null)
 
 @main("MOLVEC Demonstration"){
   <div class="row">
     <div class="col-md-6">
-      @form()
+      @form(app.api)
     </div>
     <div class="col-md-6">
       @results()
@@ -41,19 +42,18 @@
             if (k != 'image') {
               $('#result-footer-'+k)
                 .html('<em>Result generated in '+data[k].elapsed+'s</em>');
-              /*
-                 $('#result-body-'+k)
-                 .html('<pre>'+data[k].molfile+'</pre>');
-               */
-              var id = 'result-body-'+k;
-              console.log('updating element '+id);
-              var viewer = new Kekule.ChemWidget.Viewer(document.getElementById(id));
-              viewer.setEnableToolbar(true)
-                    .setEnableDirectInteraction(true)
-                    .setEnableEdit(true)
-                    .setDimension('500px','300px');
-              var mol = Kekule.IO.loadFormatData(data[k].molfile, 'mol');
-              viewer.setChemObj(mol);
+              if (data[k].molfile != null) {
+                var id = 'result-body-'+k;
+                console.log('updating element '+id);
+                var viewer = new Kekule.ChemWidget.Viewer
+                         (document.getElementById(id));
+                viewer.setEnableToolbar(true)
+                      .setEnableDirectInteraction(true)
+                      .setEnableEdit(true)
+                      .setDimension('500px','300px');
+                var mol = Kekule.IO.loadFormatData(data[k].molfile, 'mol');
+                viewer.setChemObj(mol);
+              }
             }
           }
         },
