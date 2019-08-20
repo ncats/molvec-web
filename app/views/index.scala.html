@@ -17,77 +17,82 @@
 
   $(document).ready(function(){
     $('#submit-btn').on('click', function() {
-      showloader();
-      if (!form.has('image-data') && !form.has('image-src')) {
-        const src = $('#preview').attr('src');
-        const url = new URL (window.location.origin+src);
-        form.set('image-src', url.href);
-      }
-      $("[id^=result-]").each(function () {
-        $(this).html('');
-      });
-      
-      console.log('submit form: image-src='+form.get('image-src')
-                 +' image-data='+form.get('image-data'));
-      $.ajax({
-        url: '@controllers.routes.MolVecApp.submit("all")',
-        type: 'POST',
-        data: form,
-        processData: false,
-        contentType: false,
-        success: function(data) {
-          console.log('SERVER>> '+JSON.stringify(data));
-          var route = jsRoutes.controllers.MolVecApp.results(data.image);
-          $('#submission-status')
-            .addClass('alert alert-success')
-            .html('<b>Successfully processed image <a href="'
-                 +route.url+'">'+data.image+'</a></b>');
-          for(var k in data) {
-            if (k != 'image') {
-              var result = data[k];
-              if (result.status != 'SUCCESS' && result.status != 'CACHED') {
-                $('#result-footer-'+k)
-                  .removeClass().addClass('alert alert-warning')
-                  .html('<em>'+result.status+'</em>');
-              }
-              else {
-                $('#result-footer-'+k)
-                  .removeClass().addClass('alert alert-success')
-                  .html('<em>Result generated in '+data[k].elapsed+'s</em>');
-              }
-              var molfile = result.molfile;
-              if (molfile != null && molfile != '') {
-                var id = 'result-body-'+k;
-                console.log('updating element '+id);
-                var viewer = new Kekule.ChemWidget.Viewer
-                         (document.getElementById(id));
-                viewer.setEnableToolbar(true)
-                      .setEnableDirectInteraction(true)
-                      .setEnableEdit(true)
-                      .setDimension('500px','300px');
-                var mol = Kekule.IO.loadFormatData(data[k].molfile, 'mol');
-                viewer.setChemObj(mol);
-              }
-            }
-          }
-        },
-        error: function (jqXHR, textStatus, errorMessage) {
-          console.log("***** can't submit form: "+errorMessage);
-          $('#submission-status').addClass('alert alert-warning')
-                                 .html('<b>'+errorMessage+'</b>');    
-        }
-      }).always(function () {
-        hideloader();
-      });
+      submit();
     });
 
     @if(id != null){
       const url = '@controllers.routes.MolVecApp.data(id,"image")';
       $('#preview').attr('src', url);
       form.delete('image-src');
-        form.delete('image-data');
+      form.delete('image-data');
+      submit();
     }
   });
+
+  function submit () {
+    showloader();
+    if (!form.has('image-data') && !form.has('image-src')) {
+      const src = $('#preview').attr('src');
+      const url = new URL (window.location.origin+src);
+      form.set('image-src', url.href);
+    }
+    $("[id^=result-]").each(function () {
+      $(this).html('');
+    });
+    
+    console.log('submit form: image-src='+form.get('image-src')
+               +' image-data='+form.get('image-data'));
+    $.ajax({
+      url: '@controllers.routes.MolVecApp.submit("all")',
+      type: 'POST',
+      data: form,
+      processData: false,
+      contentType: false,
+      success: function(data) {
+        console.log('SERVER>> '+JSON.stringify(data));
+        var route = jsRoutes.controllers.MolVecApp.results(data.image);
+        $('#submission-status')
+          .addClass('alert alert-success')
+          .html('<b>Successfully processed image <a href="'
+               +route.url+'">'+data.image+'</a></b>');
+        for(var k in data) {
+          if (k != 'image') {
+            var result = data[k];
+            if (result.status != 'SUCCESS' && result.status != 'CACHED') {
+              $('#result-footer-'+k)
+                .removeClass().addClass('alert alert-warning')
+                .html('<em>'+result.status+'</em>');
+            }
+            else {
+              $('#result-footer-'+k)
+                .removeClass().addClass('alert alert-success')
+                .html('<em>result generated in '+data[k].elapsed+'s</em>');
+            }
+            var molfile = result.molfile;
+            if (molfile != null && molfile != '') {
+              var id = 'result-body-'+k;
+              console.log('updating element '+id);
+              var viewer = new Kekule.ChemWidget.Viewer
+              (document.getElementById(id));
+              viewer.setEnableToolbar(true)
+                    .setEnableDirectInteraction(true)
+                    .setEnableEdit(true)
+                    .setDimension('500px','300px');
+              var mol = Kekule.IO.loadFormatData(data[k].molfile, 'mol');
+              viewer.setChemObj(mol);
+            }
+          }
+        }
+      },
+      error: function (jqXHR, textStatus, errorMessage) {
+        console.log("***** can't submit form: "+errorMessage);
+        $('#submission-status').addClass('alert alert-warning')
+                               .html('<b>'+errorMessage+'</b>');    
+      }
+    }).always(function () {
+      hideloader();
+    });
+  }
   
   function previewImage () {
     var preview = $('#preview'); //selects the query named img
@@ -136,17 +141,17 @@
       reader.readAsDataURL(blob);
     }
   }
-
+  
   function showloader () {
     $('#content-panel').each(function (index) {
       $(this).addClass('is-active');
     });
   }
-
+  
   function hideloader () {
     $('#content-panel').removeClass('is-active');
   }
-  
+    
   //previewImage();  //calls the function named previewFile()
   </script>
     
