@@ -23,6 +23,10 @@
         const url = new URL (window.location.origin+src);
         form.set('image-src', url.href);
       }
+      $("[id^=result-]").each(function () {
+        $(this).html('');
+      });
+      
       console.log('submit form: image-src='+form.get('image-src')
                  +' image-data='+form.get('image-data'));
       $.ajax({
@@ -40,9 +44,19 @@
                  +route.url+'">'+data.image+'</a></b>');
           for(var k in data) {
             if (k != 'image') {
-              $('#result-footer-'+k)
-                .html('<em>Result generated in '+data[k].elapsed+'s</em>');
-              if (data[k].molfile != null) {
+              var result = data[k];
+              if (result.status != 'SUCCESS' && result.status != 'CACHED') {
+                $('#result-footer-'+k)
+                  .removeClass().addClass('alert alert-warning')
+                  .html('<em>'+result.status+'</em>');
+              }
+              else {
+                $('#result-footer-'+k)
+                  .removeClass().addClass('alert alert-success')
+                  .html('<em>Result generated in '+data[k].elapsed+'s</em>');
+              }
+              var molfile = result.molfile;
+              if (molfile != null && molfile != '') {
                 var id = 'result-body-'+k;
                 console.log('updating element '+id);
                 var viewer = new Kekule.ChemWidget.Viewer
